@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-[80vh] flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8 bg-white p-10 rounded-3xl shadow-xl border border-slate-100">
+        <div class="text-center">
+            <h2 class="text-3xl font-extrabold text-slate-900">
+                <span class="text-orange-600">POUL</span>ify
+            </h2>
+            <p class="mt-2 text-sm text-slate-600">Smart Poultry Management for SMEs</p>
+        </div>
+
+        <div id="errorMessage" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium">
+        </div>
+
+        <div class="flex bg-slate-100 p-1 rounded-xl mb-6">
+            <button id="loginTab" onclick="toggleAuth('login')" class="w-1/2 py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-slate-800 transition-all duration-200">Login</button>
+            <button id="regTab" onclick="toggleAuth('register')" class="w-1/2 py-2 text-sm font-bold rounded-lg text-slate-500 transition-all duration-200">Register</button>
+        </div>
+
+        <form id="loginForm" action="/login" method="POST" class="space-y-4">
+            <input type="email" name="email" placeholder="Email Address" required class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none transition">
+            <input type="password" name="password" placeholder="Password" required class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none transition">
+            <button type="submit" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-orange-600 transition shadow-lg">Enter Dashboard</button>
+        </form>
+
+        <form id="registerForm" action="/register" method="POST" class="hidden space-y-4">
+            <input type="text" name="full_name" placeholder="Full Name" required class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none transition">
+            <input type="text" name="farm_name" placeholder="Farm Name (e.g., Kuku East)" required class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none transition">
+            <div class="grid grid-cols-2 gap-4">
+                <input type="text" name="country" placeholder="Country" required class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none transition">
+                <input type="text" name="region" placeholder="Region/State" required class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none transition">
+            </div>
+            <input type="text" name="city" placeholder="City" required class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none transition">
+            <input type="email" name="email" placeholder="Email Address" required class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none transition">
+            <input type="password" name="password" placeholder="Create Password" required class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none transition">
+            <button type="submit" class="w-full bg-orange-600 text-white font-bold py-4 rounded-xl hover:bg-slate-900 transition shadow-lg">Create Farm Profile</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleAuth(type) {
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const loginTab = document.getElementById('loginTab');
+    const regTab = document.getElementById('regTab');
+
+    if (type === 'register') {
+        loginForm.classList.add('hidden');
+        registerForm.classList.remove('hidden');
+        regTab.classList.add('bg-white', 'shadow-sm', 'text-slate-800');
+        regTab.classList.remove('text-slate-500');
+        loginTab.classList.remove('bg-white', 'shadow-sm', 'text-slate-800');
+        loginTab.classList.add('text-slate-500');
+    } else {
+        registerForm.classList.add('hidden');
+        loginForm.classList.remove('hidden');
+        loginTab.classList.add('bg-white', 'shadow-sm', 'text-slate-800');
+        loginTab.classList.remove('text-slate-500');
+        regTab.classList.remove('bg-white', 'shadow-sm', 'text-slate-800');
+        regTab.classList.add('text-slate-500');
+    }
+}
+
+// Show error message if exists in URL
+const urlParams = new URLSearchParams(window.location.search);
+const error = urlParams.get('error');
+if (error) {
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.textContent = error.replace(/\+/g, ' ');
+    errorDiv.classList.remove('hidden');
+}
+</script>
+{% endblock %}c

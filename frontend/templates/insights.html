@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block page_title %}AI Insights - {{ user.farm_name }}{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">🧠 AI Deep Insights</h1>
+    <p class="text-gray-600">Advanced analysis and predictions for your poultry farm.</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+    <!-- Financial Health -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fas fa-hand-holding-usd text-green-500"></i> Financial Performance
+        </h3>
+        <div class="space-y-4">
+            <div class="flex justify-between">
+                <span class="text-gray-500">Total Expenses</span>
+                <span class="font-bold text-red-600">${{ insights.total_expenses }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Total Revenue</span>
+                <span class="font-bold text-green-600">${{ insights.total_revenue }}</span>
+            </div>
+            <div class="pt-4 border-t border-gray-50 flex justify-between">
+                <span class="font-bold text-gray-900">Net Profit</span>
+                <span class="font-black text-2xl {% if insights.profit >= 0 %} text-green-600 {% else %} text-red-600 {% endif %}">
+                    ${{ insights.profit }}
+                </span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-400 font-bold uppercase">ROI</span>
+                <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold">{{ insights.roi }}%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Weight Prediction -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fas fa-chart-line text-blue-500"></i> Growth Prediction
+        </h3>
+        <p class="text-sm text-gray-500 mb-6">Estimated bird weight in 7 days based on current growth trends.</p>
+        <div class="text-center py-6 bg-blue-50 rounded-2xl">
+            <p class="text-xs text-blue-600 font-bold uppercase tracking-widest mb-1">Target Weight (7 Days)</p>
+            <p class="text-4xl font-black text-blue-900">{{ insights.predicted_weight_7d or 'N/A' }}g</p>
+        </div>
+        <p class="text-[10px] text-gray-400 mt-4 italic text-center">Prediction based on Linear Regression model trained on feed-to-weight ratios.</p>
+    </div>
+
+    <!-- Efficiency & Benchmarking -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fas fa-tachometer-alt text-orange-500"></i> Efficiency Benchmarks
+        </h3>
+        <div class="space-y-6">
+            <div>
+                <div class="flex justify-between mb-1">
+                    <span class="text-xs font-bold text-gray-500 uppercase">Survival Rate</span>
+                    <span class="text-xs font-bold text-green-600">{{ insights.survival_rate }}%</span>
+                </div>
+                <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                    <div class="bg-green-500 h-full" style="width: {{ insights.survival_rate }}%"></div>
+                </div>
+            </div>
+            <div>
+                <div class="flex justify-between mb-1">
+                    <span class="text-xs font-bold text-gray-500 uppercase">FCR Efficiency</span>
+                    <span class="text-xs font-bold text-blue-600">{{ insights.fcr }}</span>
+                </div>
+                <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                    <div class="bg-blue-500 h-full" style="width: {{ (2.5 - insights.fcr) / 1.5 * 100 if insights.fcr < 2.5 else 0 }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+    <h3 class="font-bold text-gray-800 mb-6">AI Health Recommendations</h3>
+    <div class="space-y-4">
+        {% if insights.alerts %}
+            {% for alert in insights.alerts %}
+                <div class="flex items-start gap-4 p-4 bg-red-50 rounded-2xl border border-red-100">
+                    <i class="fas fa-exclamation-triangle text-red-600 mt-1"></i>
+                    <div>
+                        <p class="font-bold text-red-900">{{ alert }}</p>
+                        <p class="text-sm text-red-700">Check feed quality and ensure water hygiene. Immediate intervention may be required.</p>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="flex items-start gap-4 p-4 bg-green-50 rounded-2xl border border-green-100">
+                <i class="fas fa-check-circle text-green-600 mt-1"></i>
+                <div>
+                    <p class="font-bold text-green-900">Your farm is operating optimally.</p>
+                    <p class="text-sm text-green-700">All metrics are within standard industry ranges. Continue with the current feeding schedule.</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

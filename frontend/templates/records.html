@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block page_title %}Farm Records{% endblock %}
+
+{% block content %}
+<div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900">📊 Historical Farm Records</h1>
+        <p class="text-gray-600 mt-2">View and manage all your recorded poultry data.</p>
+    </div>
+    <div class="flex gap-3">
+        <a href="/entry" class="bg-orange-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-orange-700 transition flex items-center gap-2 shadow-md">
+            <i class="fas fa-plus"></i> New Daily Log
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
+    <form action="/records" method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+        <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Select Flock</label>
+            <select name="flock_id" class="w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-xl focus:ring-orange-500 focus:border-orange-500 block p-3 outline-none">
+                <option value="">All Flocks</option>
+                {% for flock in user.flocks %}
+                <option value="{{ flock.id }}" {% if selected_flock_id == flock.id %}selected{% endif %}>{{ flock.name }} ({{ flock.breed }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="flex gap-3">
+            <button type="submit" class="flex-1 bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-orange-600 transition">
+                Filter Results
+            </button>
+            <a href="/records" class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition text-center">
+                Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Records Table -->
+<div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 text-gray-400 text-[10px] uppercase font-black tracking-widest border-b border-gray-100">
+                <tr>
+                    <th class="px-6 py-5">Date</th>
+                    <th class="px-6 py-5">Flock</th>
+                    <th class="px-6 py-5">Feed Consumption</th>
+                    <th class="px-6 py-5">Water Intake</th>
+                    <th class="px-6 py-5">Avg Weight</th>
+                    <th class="px-6 py-5">Egg Production</th>
+                    <th class="px-6 py-5">Mortality</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                {% if logs %}
+                    {% for log in logs %}
+                    <tr class="hover:bg-orange-50/30 transition group">
+                        <td class="px-6 py-4">
+                            <span class="text-sm font-bold text-gray-900 block">{{ log.log_date }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-gray-100 text-gray-600 group-hover:bg-orange-100 group-hover:text-orange-600 transition">
+                                {{ log.flock.name if log.flock else 'Unknown' }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-700 font-medium">{{ log.feed_consumed_kg }}</span>
+                                <span class="text-[10px] text-gray-400 font-bold uppercase">kg</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-700 font-medium">{{ log.water_consumed_liters }}</span>
+                                <span class="text-[10px] text-gray-400 font-bold uppercase">L</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-900 font-black">{{ log.avg_bird_weight_g }}</span>
+                                <span class="text-[10px] text-gray-400 font-bold uppercase">g</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm text-gray-700 font-medium">{{ log.eggs_collected }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if log.mortality_count > 0 %}
+                            <div class="flex items-center gap-1.5 text-red-600">
+                                <i class="fas fa-arrow-up text-[10px]"></i>
+                                <span class="text-sm font-black">{{ log.mortality_count }}</span>
+                            </div>
+                            {% else %}
+                            <span class="text-sm text-gray-300">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-20 text-center">
+                            <div class="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-folder-open text-gray-300 text-xl"></i>
+                            </div>
+                            <p class="text-gray-400 font-medium">No records found matching your criteria.</p>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

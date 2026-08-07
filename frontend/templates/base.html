@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POULify - {% block page_title %}{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+    <nav class="bg-white border-b border-gray-100 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16 items-center">
+            <div class="flex items-center gap-3">
+                <div class="overflow-hidden rounded-lg">
+                    <img src="/static/poulify.jpeg" alt="POULify Logo" class="h-10 w-10 object-cover">
+                </div>
+                <span class="text-xl font-bold text-gray-900 tracking-tight">POULify</span>
+            </div>
+
+            <div class="flex items-center gap-6">
+                <div class="hidden md:flex items-center gap-4">
+                    <a href="/" class="text-gray-600 hover:text-orange-600 px-3 py-2 text-sm font-medium">Global Trends</a>
+                    {% if user %}
+                    <a href="/dashboard" class="text-gray-600 hover:text-orange-600 px-3 py-2 text-sm font-medium">My Farm</a>
+                    <a href="/insights" class="text-gray-600 hover:text-orange-600 px-3 py-2 text-sm font-medium">AI Insights</a>
+                    <a href="/records" class="text-gray-600 hover:text-orange-600 px-3 py-2 text-sm font-medium">Records</a>
+                    <a href="/entry" class="text-gray-600 hover:text-orange-600 px-3 py-2 text-sm font-medium">Add Log</a>
+                    <a href="/settings" class="text-gray-600 hover:text-orange-600 px-3 py-2 text-sm font-medium"><i class="fas fa-cog"></i> Settings</a>
+                    {% endif %}
+                </div>
+
+                <div class="flex items-center gap-2 border-l pl-6 border-gray-100">
+                    {% if user %}
+                    <span class="text-gray-600 text-sm font-medium mr-2">Hello, {{ user.full_name }}</span>
+                    <a href="/logout" class="text-red-600 hover:text-red-800 px-4 py-2 text-sm font-semibold">Logout</a>
+                    {% else %}
+                    <a href="/auth" class="text-gray-600 hover:text-gray-900 px-4 py-2 text-sm font-semibold">Login</a>
+                    <a href="/auth" class="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-orange-600 transition shadow-md">
+                        Get Started
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

@@ -1,0 +1,31 @@
+Atlas atlas-3gxp6x-shard-0 [primary] E-commerce> db.products.find().limit(2)
+[
+  {
+    _id: ObjectId('69cb6867c2ebb579003682f3'),
+    name: 'Airmax',
+    price: 120,
+    quality: 'premium',
+    size: 'medium',
+    brand: 'Nike',
+    inStock: 200,
+    supplier: {
+      name: 'Nike Sports Inc.',
+      contact: { email: 'supply@nike.com' },
+      region: 'North America'
+    }
+  },
+  {
+    _id: ObjectId('69cb6867c2ebb579003682f4'),
+    name: 'Safariboots',
+    price: 150,
+    quality: 'high density',
+    size: 'large',
+    brand: 'Columbia',
+    inStock: 85,
+    supplier: {
+      name: 'Columbia Sportswear',
+      contact: { email: 'procurement@columbia.com' },
+      region: 'North America'
+    }
+  }
+]
