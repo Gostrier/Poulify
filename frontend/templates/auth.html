@@ -19,12 +19,14 @@
         </div>
 
         <form id="loginForm" action="/login" method="POST" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
             <input type="email" name="email" placeholder="Email Address" required class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none transition">
             <input type="password" name="password" placeholder="Password" required class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none transition">
             <button type="submit" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-orange-600 transition shadow-lg">Enter Dashboard</button>
         </form>
 
         <form id="registerForm" action="/register" method="POST" class="hidden space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
             <input type="text" name="full_name" placeholder="Full Name" required class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none transition">
             <input type="text" name="farm_name" placeholder="Farm Name (e.g., Kuku East)" required class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none transition">
             <div class="grid grid-cols-2 gap-4">

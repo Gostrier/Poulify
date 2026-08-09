@@ -36,7 +36,7 @@ class DailyLog(Base):
     __tablename__ = "daily_logs"
     id = Column(Integer, primary_key=True, index=True)
     flock_id = Column(Integer, ForeignKey("flocks.id"))
-    log_date = Column(String(50))
+    log_date = Column(Date)
     feed_consumed_kg = Column(Float)
     water_consumed_liters = Column(Float)
     avg_bird_weight_g = Column(Float)

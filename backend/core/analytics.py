@@ -3,7 +3,10 @@ import numpy as np
 from sklearn.ensemble import IsolationForest
 import pickle
 import os
+import logging
 from datetime import datetime, date
+
+logger = logging.getLogger(__name__)
 
 def process_poultry_data(logs, expenses=None, revenues=None, vaccinations=None):
     """
@@ -94,8 +97,8 @@ def process_poultry_data(logs, expenses=None, revenues=None, vaccinations=None):
                 weight_model = pickle.load(f)
                 age_days = len(df) # Rough estimate
                 predicted_weight = weight_model.predict([[age_days + 7, total_feed / age_days * (age_days + 7)]])[0]
-        except:
-            pass
+        except Exception as e:
+            logger.warning("Weight model could not be loaded/predicted: %s", e)
 
     return {
         "fcr": current_fcr,

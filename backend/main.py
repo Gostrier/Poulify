@@ -1,5 +1,6 @@
 import uvicorn
 import os
+import logging
 import datetime
 from fastapi import FastAPI, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -9,25 +10,37 @@ from sqlalchemy.orm import Session
 
 # Import local modules
 from core.database import SessionLocal, engine
-from core import auth, models, analytics
+from core import auth, models, analytics, security
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("poulify")
 
 # Initialize Database
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Poultry AI-DBMS Pro")
 
-# --- FIXED STATIC FILES LOGIC ---
+# Cookie flag: set COOKIE_SECURE=true in backend/.env when serving over HTTPS.
+COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() in ("1", "true", "yes")
+
+app.add_middleware(
+    security.CSRFMiddleware,
+    secure=COOKIE_SECURE,
+)
+
+# --- STATIC FILES ---
 base_dir = os.path.dirname(os.path.abspath(__file__))
 static_dir = os.path.normpath(os.path.join(base_dir, "..", "frontend", "static"))
 
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 else:
-    print(f"CRITICAL WARNING: {static_dir} not found.")
+    logger.warning("Static directory not found: %s", static_dir)
 
 # Templates logic
 template_dir = os.path.normpath(os.path.join(base_dir, "..", "frontend", "templates"))
 templates = Jinja2Templates(directory=template_dir)
+templates.env.globals["csrf_token"] = lambda request: getattr(request.state, "csrf_token", "")
 
 # --- DEPENDENCIES ---
 
@@ -48,18 +61,30 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == email).first()
     return user
 
+def set_auth_cookie(response: RedirectResponse, token: str):
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        samesite="lax",
+        secure=COOKIE_SECURE,
+        max_age=auth.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+
 # --- AUTH ROUTES ---
 
 @app.post("/register")
 async def register_user(
-    full_name: str = Form(...), 
-    email: str = Form(...), 
+    full_name: str = Form(...),
+    email: str = Form(...),
     password: str = Form(...),
     farm_name: str = Form(...),
     country: str = Form(...),
     region: str = Form(...),
     city: str = Form(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _rate_limit=Depends(security.check_auth_rate_limit),
+    _csrf=Depends(security.check_csrf)
 ):
     try:
         existing_user = db.query(models.User).filter(models.User.email == email).first()
@@ -82,17 +107,20 @@ async def register_user(
         
         access_token = auth.create_access_token(data={"sub": email})
         response = RedirectResponse(url="/dashboard", status_code=303)
-        response.set_cookie(key="access_token", value=access_token, httponly=True)
+        set_auth_cookie(response, access_token)
         return response
     except Exception as e:
         db.rollback()
-        return f"Error during registration: {str(e)}"
+        logger.exception("Registration failed for %s", email)
+        return RedirectResponse(url="/auth?error=Registration+failed.+Please+try+again", status_code=303)
 
 @app.post("/login")
 async def login_user(
     email: str = Form(...), 
     password: str = Form(...), 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _rate_limit=Depends(security.check_auth_rate_limit),
+    _csrf=Depends(security.check_csrf)
 ):
     user = db.query(models.User).filter(models.User.email == email).first()
     if not user or not auth.verify_password(password, user.hashed_password):
@@ -100,7 +128,7 @@ async def login_user(
     
     access_token = auth.create_access_token(data={"sub": user.email})
     response = RedirectResponse(url="/dashboard", status_code=303)
-    response.set_cookie(key="access_token", value=access_token, httponly=True)
+    set_auth_cookie(response, access_token)
     return response
 
 @app.get("/logout")
@@ -120,7 +148,7 @@ async def auth_page(request: Request, user: models.User = Depends(get_current_us
 @app.get("/", response_class=HTMLResponse)
 async def homepage(request: Request, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
     # Global dashboard: Aggregate data from ALL farmers
-    logs = db.query(models.DailyLog).all()
+    logs = db.query(models.DailyLog).order_by(models.DailyLog.log_date.desc()).limit(100).all()
     expenses = db.query(models.Expense).all()
     revenues = db.query(models.Revenue).all()
     vaccinations = db.query(models.Vaccination).all()
@@ -130,7 +158,7 @@ async def homepage(request: Request, db: Session = Depends(get_db), user: models
     
     return templates.TemplateResponse("dashboard.html", {
         "request": request, 
-        "logs": logs[:100], # Only show last 100 logs in table
+        "logs": logs,
         "insights": insights,
         "user": user,
         "is_global": True
@@ -194,7 +222,8 @@ async def add_expense(
     amount: float = Form(...),
     description: str = Form(""),
     db: Session = Depends(get_db),
-    user: models.User = Depends(get_current_user)
+    user: models.User = Depends(get_current_user),
+    _csrf=Depends(security.check_csrf)
 ):
     if not user: return RedirectResponse(url="/auth")
     new_exp = models.Expense(flock_id=flock_id, category=category, amount=amount, description=description)
@@ -209,7 +238,8 @@ async def add_revenue(
     amount: float = Form(...),
     description: str = Form(""),
     db: Session = Depends(get_db),
-    user: models.User = Depends(get_current_user)
+    user: models.User = Depends(get_current_user),
+    _csrf=Depends(security.check_csrf)
 ):
     if not user: return RedirectResponse(url="/auth")
     new_rev = models.Revenue(flock_id=flock_id, category=category, amount=amount, description=description)
@@ -223,7 +253,8 @@ async def add_vaccination(
     vaccine_name: str = Form(...),
     scheduled_date: str = Form(...),
     db: Session = Depends(get_db),
-    user: models.User = Depends(get_current_user)
+    user: models.User = Depends(get_current_user),
+    _csrf=Depends(security.check_csrf)
 ):
     if not user: return RedirectResponse(url="/auth")
     new_vac = models.Vaccination(
@@ -307,7 +338,8 @@ async def add_flock(
     breed: str = Form(...),
     initial_count: int = Form(...),
     db: Session = Depends(get_db),
-    user: models.User = Depends(get_current_user)
+    user: models.User = Depends(get_current_user),
+    _csrf=Depends(security.check_csrf)
 ):
     if not user:
         return RedirectResponse(url="/auth", status_code=303)
@@ -341,7 +373,8 @@ async def update_profile(
     region: str = Form(...),
     city: str = Form(...),
     db: Session = Depends(get_db),
-    user: models.User = Depends(get_current_user)
+    user: models.User = Depends(get_current_user),
+    _csrf=Depends(security.check_csrf)
 ):
     if not user:
         return RedirectResponse(url="/auth")
@@ -365,7 +398,8 @@ async def save_log(
     mortality: int = Form(...),
     eggs: int = Form(0),
     db: Session = Depends(get_db),
-    user: models.User = Depends(get_current_user)
+    user: models.User = Depends(get_current_user),
+    _csrf=Depends(security.check_csrf)
 ):
     if not user:
         return RedirectResponse(url="/auth")
@@ -374,8 +408,13 @@ async def save_log(
     if not flock:
         return "Access Denied: You do not own this flock."
 
+    try:
+        log_date_obj = datetime.datetime.strptime(log_date, "%Y-%m-%d").date()
+    except ValueError:
+        return RedirectResponse(url="/entry?error=Invalid+date+format", status_code=303)
+
     new_log = models.DailyLog(
-        flock_id=flock_id, log_date=log_date, feed_consumed_kg=feed,
+        flock_id=flock_id, log_date=log_date_obj, feed_consumed_kg=feed,
         water_consumed_liters=water, avg_bird_weight_g=weight,
         mortality_count=mortality, eggs_collected=eggs
     )
@@ -384,4 +423,9 @@ async def save_log(
     return RedirectResponse(url="/dashboard", status_code=303)
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run(
+        "main:app",
+        host="127.0.0.1",
+        port=8000,
+        reload=os.getenv("DEV_RELOAD", "false").lower() in ("1", "true", "yes"),
+    )

@@ -51,7 +51,7 @@ def seed_poultry_data():
                 
             new_log = DailyLog(
                 flock_id=flock.id,
-                log_date=log_date.strftime("%Y-%m-%d"),
+                log_date=log_date,
                 feed_consumed_kg=round(feed, 2),
                 water_consumed_liters=round(water, 2),
                 avg_bird_weight_g=round(current_weight, 2),

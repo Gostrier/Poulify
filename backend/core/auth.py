@@ -10,9 +10,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # 1. Configuration
-SECRET_KEY = os.getenv("SECRET_KEY", "poulify_super_secret_key_change_me_in_production")
+SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
+
+if not SECRET_KEY or SECRET_KEY in ("poulify_super_secret_key_change_me_in_production", "change_me"):
+    raise RuntimeError(
+        "SECRET_KEY is missing or still set to the insecure default. "
+        "Generate a strong random key and put it in backend/.env, e.g.:\n"
+        "  python -c \"import secrets; print(secrets.token_hex(32))\""
+    )
 
 # 2. Password Hashing Context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
